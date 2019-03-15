@@ -89,45 +89,70 @@ class TestDOption(testcase.GsUtilIntegrationTestCase):
     # Headers come in different forms, depending on the python version. Adding
     # both options for full coverage and to ensure no false negatives.
     self.assertTrue(("('proxy_pass', u'REDACTED')" in stderr)
-                    or ("('proxy_pass', 'REDACTED')" in stderr))
+                    or ("('proxy_pass', 'REDACTED')" in stderr),
+                    "('proxy_pass', 'REDACTED') not found in '{0}'".format(
+                      stderr))
     self.assertTrue(('header: Expires: ' in stderr)
-                    or ('Expires header: ' in stderr))
+                    or ('Expires header: ' in stderr),
+                    "Expires header not found in '{0}'".format(
+                      stderr))
     self.assertTrue(('header: Date: ' in stderr)
-                    or ('Date header: ' in stderr))
+                    or ('Date header: ' in stderr),
+                    "Date header not found in '{0}'".format(
+                      stderr))
     self.assertTrue(('header: Content-Type: application/octet-stream' in stderr)
-                    or ('Content-Type header: ' in stderr))
+                    or ('Content-Type header: ' in stderr),
+                    "Content-Type header not found in '{0}'".format(
+                      stderr))
     self.assertTrue(('header: Content-Length: 10' in stderr)
-                    or ('Content-Length header: ' in stderr))
+                    or ('Content-Length header: ' in stderr),
+                    "Content-Length header not found in '{0}'".format(
+                      stderr))
 
     if self.test_api == ApiSelector.XML:
       self.assertTrue(('header: Cache-Control: private, max-age=0' in stderr)
-                      or ('Cache-Control header: ' in stderr))
+                      or ('Cache-Control header: ' in stderr),
+                    "Cache-Control header not found in '{0}'".format(
+                      stderr))
       self.assertTrue(('header: Last-Modified: ' in stderr)
-                      or ('Last-Modified header: ' in stderr))
+                      or ('Last-Modified header: ' in stderr),
+                    "Last-Modified header not found in '{0}'".format(
+                      stderr))
       self.assertTrue(('header: ETag: "781e5e245d69b566979b86e28d23f2c7"' in
-                       stderr) or ('ETag header:' in stderr))
+                       stderr) or ('ETag header:' in stderr),
+                    "ETag header not found or incorrect value found in "
+                    "'{0}'".format(stderr))
       self.assertTrue(('header: x-goog-generation: ' in stderr)
-                      or ('x-goog-generation header:' in stderr))
+                      or ('x-goog-generation header:' in stderr),
+                    "x-goog-generation header not found in '{0}'".format(
+                      stderr))
       self.assertTrue(('header: x-goog-metageneration: 1' in stderr)
-                      or ('x-goog-metageneration header:' in stderr))
+                      or ('x-goog-metageneration header:' in stderr),
+                    "x-goog-metageneration header not found in '{0}'".format(
+                      stderr))
       self.assertTrue(
           (('header: x-goog-hash: crc32c=KAwGng==' in stderr)
            and ('header: x-goog-hash: md5=eB5eJF1ptWaXm4bijSPyxw==' in stderr))
-          or ('x-goog-hash header:' in stderr))
+          or ('x-goog-hash header:' in stderr), "x-goog-hash header not found "
+              "or incorrect value found in '{0}'".format(stderr))
       if six.PY2:
         self.assertRegex(
             stderr, '.*HEAD /%s/%s.*Content-Length: 0.*User-Agent: .*gsutil/%s' %
             (key_uri.bucket_name, key_uri.object_name, gslib.VERSION))
     elif self.test_api == ApiSelector.JSON:
-      self.assertRegex(
-          stderr, '.*GET.*b/%s/o/%s.*user-agent:.*gsutil/%s.Python/%s' %
-          (key_uri.bucket_name, key_uri.object_name, gslib.VERSION,
-           platform.python_version()))
+      self.assertRegex(stderr,
+                       '.*GET.*b/%s/o/%s.*user-agent:.*gsutil/%s.Python/%s' %
+                       (key_uri.bucket_name, key_uri.object_name, gslib.VERSION,
+                        platform.python_version()))
       self.assertTrue(('header: Cache-Control: no-cache, no-store, max-age=0,'
                        ' must-revalidate' in stderr)
-                      or ('Cache-Control header: ' in stderr))
+                      or ('Cache-Control header: ' in stderr),
+                    "JSON Cache-Control header not found or incorrect value "
+                    "found in '{0}'".format(stderr))
       self.assertTrue(("md5Hash: u'eB5eJF1ptWaXm4bijSPyxw=='" in stderr)
-                      or ("md5Hash: 'eB5eJF1ptWaXm4bijSPyxw=='" in stderr))
+                      or ("md5Hash: 'eB5eJF1ptWaXm4bijSPyxw=='" in stderr),
+                    "md5 hash not found or incorrect value found in "
+                    "'{0}'".format(stderr))
 
     if gslib.IS_PACKAGE_INSTALL:
       self.assertIn('PACKAGED_GSUTIL_INSTALLS_DO_NOT_HAVE_CHECKSUMS', stdout)
