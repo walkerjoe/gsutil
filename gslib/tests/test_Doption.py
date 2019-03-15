@@ -85,53 +85,49 @@ class TestDOption(testcase.GsUtilIntegrationTestCase):
     self.assertIn('You are running gsutil with debug output enabled.', stderr)
     self.assertIn("reply: 'HTTP/1.1 200 OK", stderr)
     self.assertIn('config:', stderr)
-    if six.PY2:
-      self.assertIn("('proxy_pass', u'REDACTED')", stderr)
-      self.assertIn("reply: 'HTTP/1.1 200 OK", stderr)
-      self.assertIn('header: Expires: ', stderr)
-      self.assertIn('header: Date: ', stderr)
-      self.assertIn('header: Content-Type: application/octet-stream', stderr)
-      self.assertIn('header: Content-Length: 10', stderr)
-    else:
-      self.assertIn("('proxy_pass', 'REDACTED')", stderr)
-      self.assertIn("reply: 'HTTP/1.1 200 OK", stderr)
-      self.assertIn('Expires header: ', stderr)
-      self.assertIn('Date header: ', stderr)
-      self.assertIn('Content-Type header: ', stderr)
-      self.assertIn('Content-Length header: ', stderr)
+    self.assertIn("reply: 'HTTP/1.1 200 OK", stderr)
+    # Headers come in different forms, depending on the python version. Adding
+    # both options for full coverage and to ensure no false negatives.
+    self.assertTrue(("('proxy_pass', u'REDACTED')" in stderr)
+                    or ("('proxy_pass', 'REDACTED')" in stderr))
+    self.assertTrue(('header: Expires: ' in stderr)
+                    or ('Expires header: ' in stderr))
+    self.assertTrue(('header: Date: ' in stderr)
+                    or ('Date header: ' in stderr))
+    self.assertTrue(('header: Content-Type: application/octet-stream' in stderr)
+                    or ('Content-Type header: ' in stderr))
+    self.assertTrue(('header: Content-Length: 10' in stderr)
+                    or ('Content-Length header: ' in stderr))
 
     if self.test_api == ApiSelector.XML:
+      self.assertTrue(('header: Cache-Control: private, max-age=0' in stderr)
+                      or ('Cache-Control header: ' in stderr))
+      self.assertTrue(('header: Last-Modified: ' in stderr)
+                      or ('Last-Modified header: ' in stderr))
+      self.assertTrue(('header: ETag: "781e5e245d69b566979b86e28d23f2c7"' in
+                       stderr) or ('ETag header:' in stderr))
+      self.assertTrue(('header: x-goog-generation: ' in stderr)
+                      or ('x-goog-generation header:' in stderr))
+      self.assertTrue(('header: x-goog-metageneration: 1' in stderr)
+                      or ('x-goog-metageneration header:' in stderr))
+      self.assertTrue(
+          (('header: x-goog-hash: crc32c=KAwGng==' in stderr)
+           and ('header: x-goog-hash: md5=eB5eJF1ptWaXm4bijSPyxw==' in stderr))
+          or ('x-goog-hash header:' in stderr))
       if six.PY2:
         self.assertRegex(
             stderr, '.*HEAD /%s/%s.*Content-Length: 0.*User-Agent: .*gsutil/%s' %
             (key_uri.bucket_name, key_uri.object_name, gslib.VERSION))
-        self.assertIn('header: Cache-Control: private, max-age=0',
-                      stderr)
-        self.assertIn('header: Last-Modified: ', stderr)
-        self.assertIn('header: ETag: "781e5e245d69b566979b86e28d23f2c7"', stderr)
-        self.assertIn('header: x-goog-generation: ', stderr)
-        self.assertIn('header: x-goog-metageneration: 1', stderr)
-        self.assertIn('header: x-goog-hash: crc32c=KAwGng==', stderr)
-        self.assertIn('header: x-goog-hash: md5=eB5eJF1ptWaXm4bijSPyxw==', stderr)
-      else:
-        self.assertIn('Cache-Control header: ', stderr)
-        self.assertIn('Last-Modified header: ', stderr)
-        self.assertIn('ETag header:', stderr)
-        self.assertIn('x-goog-generation header:', stderr)
-        self.assertIn('x-goog-metageneration header:', stderr)
-        self.assertIn('x-goog-hash header:', stderr)
     elif self.test_api == ApiSelector.JSON:
       self.assertRegex(
           stderr, '.*GET.*b/%s/o/%s.*user-agent:.*gsutil/%s.Python/%s' %
           (key_uri.bucket_name, key_uri.object_name, gslib.VERSION,
            platform.python_version()))
-      if six.PY2:
-        self.assertIn(('header: Cache-Control: no-cache, no-store, max-age=0, '
-                       'must-revalidate'), stderr)
-        self.assertIn("md5Hash: u'eB5eJF1ptWaXm4bijSPyxw=='", stderr)
-      else:
-        self.assertIn('Cache-Control header: ', stderr)
-        self.assertIn("md5Hash: 'eB5eJF1ptWaXm4bijSPyxw=='", stderr)
+      self.assertTrue(('header: Cache-Control: no-cache, no-store, max-age=0,'
+                       ' must-revalidate' in stderr)
+                      or ('Cache-Control header: ' in stderr))
+      self.assertTrue(("md5Hash: u'eB5eJF1ptWaXm4bijSPyxw=='" in stderr)
+                      or ("md5Hash: 'eB5eJF1ptWaXm4bijSPyxw=='" in stderr))
 
     if gslib.IS_PACKAGE_INSTALL:
       self.assertIn('PACKAGED_GSUTIL_INSTALLS_DO_NOT_HAVE_CHECKSUMS', stdout)
