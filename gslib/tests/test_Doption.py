@@ -108,10 +108,9 @@ class TestDOption(testcase.GsUtilIntegrationTestCase):
     self.assertIn('You are running gsutil with debug output enabled.', stderr)
     self.assertIn("reply: 'HTTP/1.1 200 OK", stderr)
     self.assertIn('config:', stderr)
-    self.assertIn("reply: 'HTTP/1.1 200 OK", stderr)
     # Headers come in different forms, depending on the python version. Adding
     # both options for full coverage and to ensure no false negatives.
-
+    # All true_tests get ran at the bottom of the function in the for-loop.
     true_tests = [
         _TextContainsOption(text=stderr, option_list=[
             "('proxy_pass', u'REDACTED')", "('proxy_pass', 'REDACTED')"]),
