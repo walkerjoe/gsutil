@@ -31,12 +31,13 @@ from gslib.tests.util import SetBotoConfigForTest
 from gslib.utils.unit_util import ONE_KIB
 
 
-def _TextContainsOption(text, option_list):
+def _TextContainsOption(text, option_list, error_msg=None):
   """Check to see if one of the elements in option_list is in the provided text.
 
   Args:
     text: Body of text to search.
     option_list: List of options to search for inside text.
+    error_msg: Optional element to override built-in error message.
 
   Returns:
     Returns True if found, False if not.
@@ -45,8 +46,12 @@ def _TextContainsOption(text, option_list):
     text = six.ensure_text(text)
   for option in option_list:
     if six.ensure_text(option) in text:
-      return True
-  return False
+      # Future feature: method can be used to test for assertFalse since error
+      # message can be returned with True outcome as well as False.
+      return [True, error_msg or "Found option: {0}\nIn Text: "
+                                 "{1}".format(option, text)]
+  return [False, "Text Options: {0}\nNot found in: {1}".format(
+      option_list, text)]
 
 
 @SkipForS3('-D output is implementation-specific.')
@@ -108,59 +113,39 @@ class TestDOption(testcase.GsUtilIntegrationTestCase):
     # both options for full coverage and to ensure no false negatives.
 
     true_tests = [
-        [_TextContainsOption(text=stderr, option_list=[
-            "('proxy_pass', u'REDACTED')",
-            "('proxy_pass', 'REDACTED')"]),
-         "('proxy_pass', 'REDACTED') not found in '{0}'".format(stderr)],
-        [_TextContainsOption(text=stderr, option_list=[
-            'header: Expires: ',
-            'Expires header: ']),
-         "Expires header not found in '{0}'".format(stderr)],
-        [_TextContainsOption(text=stderr, option_list=[
-            'header: Date: ',
-            'Date header: ']),
-         "Date header not found in '{0}'".format(stderr)],
-        [_TextContainsOption(text=stderr, option_list=[
+        _TextContainsOption(text=stderr, option_list=[
+            "('proxy_pass', u'REDACTED')", "('proxy_pass', 'REDACTED')"]),
+        _TextContainsOption(text=stderr, option_list=[
+            'header: Expires: ', 'Expires header: ']),
+        _TextContainsOption(text=stderr, option_list=[
+            'header: Date: ', 'Date header: ']),
+        _TextContainsOption(text=stderr, option_list=[
             'header: Content-Type: application/octet-stream',
             'Content-Type header: ']),
-          "Content-Type header not found in '{0}'".format(stderr)],
-        [_TextContainsOption(text=stderr, option_list=[
-            'header: Content-Length: 10',
-            'Content-Length header: ']),
-          "Content-Length header not found in '{0}'".format(stderr)],
+        _TextContainsOption(text=stderr, option_list=[
+            'header: Content-Length: 10', 'Content-Length header: ']),
     ]
-
 
     if self.test_api == ApiSelector.XML:
       true_tests = true_tests + [
-        [_TextContainsOption(text=stderr, option_list=[
-          'header: Cache-Control: private, max-age=0',
-          'Cache-Control header: ']),
-        "Cache-Control header not found in '{0}'".format(stderr)],
-        [_TextContainsOption(text=stderr, option_list=[
-          'header: Last-Modified: ',
-          'Last-Modified header: ']),
-         "Last-Modified header not found in '{0}'".format(stderr)],
-        [_TextContainsOption(text=stderr, option_list=[
-          'header: ETag: "781e5e245d69b566979b86e28d23f2c7"',
-          'ETag header:']),
-         "ETag header not found or incorrect value found in '{0}'".format(stderr)],
-        [_TextContainsOption(text=stderr, option_list=[
-          'header: x-goog-generation: ',
-          'x-goog-generation header:']),
-         "x-goog-generation header not found in '{0}'".format(stderr)],
-        [_TextContainsOption(text=stderr, option_list=[
-          'header: x-goog-metageneration: 1',
-          'x-goog-metageneration header:']),
-         "x-goog-metageneration header not found in '{0}'".format(stderr)],
-        [(_TextContainsOption(text=stderr, option_list=[
-          'header: x-goog-hash: crc32c=KAwGng==',
-          'x-goog-hash header:']) and
-         _TextContainsOption(text=stderr, option_list=[
-           'header: x-goog-hash: md5=eB5eJF1ptWaXm4bijSPyxw==',
-           'x-goog-hash header:'])),
-         "x-goog-hash header not found or incorrect value found in "
-         "'{0}'".format(stderr)],
+        _TextContainsOption(text=stderr, option_list=[
+            'header: Cache-Control: private, max-age=0',
+            'Cache-Control header: ']),
+        _TextContainsOption(text=stderr, option_list=[
+            'header: Last-Modified: ', 'Last-Modified header: ']),
+        _TextContainsOption(text=stderr, option_list=[
+            'header: ETag: "781e5e245d69b566979b86e28d23f2c7"',
+            'ETag header:']),
+        _TextContainsOption(text=stderr, option_list=[
+            'header: x-goog-generation: ', 'x-goog-generation header:']),
+        _TextContainsOption(text=stderr, option_list=[
+            'header: x-goog-metageneration: 1',
+            'x-goog-metageneration header:']),
+        _TextContainsOption(text=stderr, option_list=[
+            'header: x-goog-hash: crc32c=KAwGng==', 'x-goog-hash header:']),
+        _TextContainsOption(text=stderr, option_list=[
+            'header: x-goog-hash: md5=eB5eJF1ptWaXm4bijSPyxw==',
+            'x-goog-hash header:']),
       ]
       if six.PY2:
         self.assertRegex(
@@ -172,15 +157,12 @@ class TestDOption(testcase.GsUtilIntegrationTestCase):
                        (key_uri.bucket_name, key_uri.object_name, gslib.VERSION,
                         platform.python_version()))
       true_tests = true_tests + [
-        [_TextContainsOption(text=stderr, option_list=[
-          'header: Cache-Control: no-cache, no-store, max-age=0, must-revalidate',
-          'Cache-Control header: ']),
-         "JSON Cache-Control header not found or incorrect value found in "
-         "'{0}'".format(stderr)],
-        [_TextContainsOption(text=stderr, option_list=[
-          "md5Hash: u'eB5eJF1ptWaXm4bijSPyxw=='",
-          "md5Hash: 'eB5eJF1ptWaXm4bijSPyxw=='"]),
-         "md5 hash not found or incorrect value found in '{0}'".format(stderr)],
+        _TextContainsOption(text=stderr, option_list=[
+            'header: Cache-Control: no-cache, no-store, max-age=0, must-revalidate',
+            'Cache-Control header: ']),
+        _TextContainsOption(text=stderr, option_list=[
+            "md5Hash: u'eB5eJF1ptWaXm4bijSPyxw=='",
+            "md5Hash: 'eB5eJF1ptWaXm4bijSPyxw=='"]),
       ]
 
     if gslib.IS_PACKAGE_INSTALL:
