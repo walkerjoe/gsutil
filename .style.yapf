@@ -1,0 +1,64 @@
+# .style.yapf
+#
+# DESCRIPTION
+#       Configuration file for the python formatter yapf.
+#
+#       This configuration is based on the generic
+#       configuration published on GitHub.
+#
+# SEE ALSO
+#       http://github.com/google/yapf
+#       http://github.com/google/yapf#knobs
+#
+# GSUTIL INSTRUCTIONS
+#   Command to use (while in gsutil root directory):
+#     python -m yapf --style .style.yapf ./gsutil.py
+#   This will print out the entire file, formatted as per the style sheet. To replace the file instead, see below.
+#   Add -i for inline replacement:
+#     python -m yapf --style .style.yapf -i ./gsutil.py
+#
+
+
+
+[style]
+
+
+allow_split_before_default_or_named_assigns=true
+allow_split_before_dict_value=true
+arithmetic_precedence_indication=true
+blank_line_before_class_docstring=false
+blank_line_before_module_docstring=false
+blank_lines_around_top_level_definition=2
+coalesce_brackets=false
+column_limit=80
+continuation_align_style='space'
+continuation_indent_width=4
+dedent_closing_brackets=false
+disable_ending_comma_heuristic=false
+each_dict_entry_on_separate_line=true
+indent_dictionary_value=false
+indent_width=2
+indent_blank_lines=false
+join_multiple_lines=true
+space_between_ending_comma_and_closing_bracket=true
+spaces_around_power_operator=false
+spaces_around_default_or_named_assign=false
+spaces_before_comment=2
+split_arguments_when_comma_terminated=false
+split_all_comma_separated_values=false
+split_before_bitwise_operator=true
+split_before_closing_bracket=true
+split_before_dict_set_generator=true
+split_before_dot=false
+split_before_expression_after_opening_paren=false
+split_before_first_argument=false
+split_before_logical_operator=true
+split_before_named_assigns=true
+split_penalty_after_opening_bracket=300
+split_penalty_after_unary_operator=10000
+split_penalty_before_if_expr=0
+split_penalty_bitwise_operator=300
+split_penalty_excess_character=7000
+split_penalty_for_added_line_split=30
+split_penalty_import_names=10000
+split_penalty_logical_operator=300
