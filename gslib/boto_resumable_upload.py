@@ -42,8 +42,8 @@ TODO: gsutil-beta: Add a similar comment to the boto code.
 """
 
 from __future__ import absolute_import
-from __future__ import print_function
 from __future__ import division
+from __future__ import print_function
 from __future__ import unicode_literals
 
 import errno
@@ -51,20 +51,17 @@ import random
 import re
 import socket
 import time
-
-import six
-from six.moves import urllib
-from six.moves import http_client
 from boto import UserAgent
 from boto.connection import AWSAuthConnection
 from boto.exception import ResumableTransferDisposition
 from boto.exception import ResumableUploadException
-
 from gslib.exception import InvalidUrlError
 from gslib.utils.boto_util import GetMaxRetryDelay
 from gslib.utils.boto_util import GetNumRetries
 from gslib.utils.constants import XML_PROGRESS_CALLBACKS
-
+import six
+from six.moves import http_client
+from six.moves import urllib
 
 if six.PY3:
   long = int
@@ -81,8 +78,11 @@ class BotoResumableUpload(object):
   # inclusive numbering).
   SERVICE_HAS_NOTHING = (0, -1)
 
-  def __init__(self, tracker_callback, logger,
-               resume_url=None, num_retries=None):
+  def __init__(self,
+               tracker_callback,
+               logger,
+               resume_url=None,
+               num_retries=None):
     """Constructor. Instantiate once for each uploaded file.
 
     Args:
@@ -119,13 +119,12 @@ class BotoResumableUpload(object):
     Raises InvalidUrlError if URL is syntactically invalid.
     """
     parse_result = urllib.parse.urlparse(url)
-    if (parse_result.scheme.lower() not in ['http', 'https'] or
-        not parse_result.netloc):
+    if (parse_result.scheme.lower() not in ['http', 'https']
+        or not parse_result.netloc):
       raise InvalidUrlError('Invalid upload URL (%s)' % url)
     self.upload_url = url
     self.upload_url_host = parse_result.netloc
-    self.upload_url_path = '%s?%s' % (
-        parse_result.path, parse_result.query)
+    self.upload_url_path = '%s?%s' % (parse_result.path, parse_result.query)
     self.service_has_bytes = 0
 
   def _BuildContentRangeHeader(self, range_spec='*', length_spec='*'):
@@ -155,8 +154,12 @@ class BotoResumableUpload(object):
         'Content-Length': '0'
     }
     return AWSAuthConnection.make_request(
-        conn, 'PUT', path=self.upload_url_path, auth_path=self.upload_url_path,
-        headers=put_headers, host=self.upload_url_host)
+        conn,
+        'PUT',
+        path=self.upload_url_path,
+        auth_path=self.upload_url_path,
+        headers=put_headers,
+        host=self.upload_url_host)
 
   def _QueryServicePos(self, conn, file_length):
     """Queries service to find out what bytes it currently has.
@@ -189,8 +192,8 @@ class BotoResumableUpload(object):
       # start a new transfer (and the caller will then save the new
       # upload URL to the tracker file).
       raise ResumableUploadException(
-          'Got non-308 response (%s) from service state query' %
-          resp.status, ResumableTransferDisposition.START_OVER)
+          'Got non-308 response (%s) from service state query' % resp.status,
+          ResumableTransferDisposition.START_OVER)
     got_valid_response = False
     range_spec = resp.getheader('range')
     if range_spec:
@@ -209,8 +212,8 @@ class BotoResumableUpload(object):
       return self.SERVICE_HAS_NOTHING
     if not got_valid_response:
       raise ResumableUploadException(
-          'Couldn\'t parse upload service state query response (%s)' %
-          str(resp.getheaders()), ResumableTransferDisposition.START_OVER)
+          'Couldn\'t parse upload service state query response (%s)' % str(
+              resp.getheaders()), ResumableTransferDisposition.START_OVER)
     if conn.debug >= 1:
       self.logger.debug('Service has: Range: %d - %d.', service_start,
                         service_end)
@@ -249,8 +252,7 @@ class BotoResumableUpload(object):
       post_headers[k] = headers[k]
     post_headers[conn.provider.resumable_upload_header] = 'start'
 
-    resp = conn.make_request(
-        'POST', key.bucket.name, key.name, post_headers)
+    resp = conn.make_request('POST', key.bucket.name, key.name, post_headers)
     # Get upload URL from response 'Location' header.
     body = resp.read()
 
@@ -264,8 +266,7 @@ class BotoResumableUpload(object):
     elif resp.status != 200 and resp.status != 201:
       raise ResumableUploadException(
           'Got status %d from attempt to start resumable upload. '
-          'Aborting' % resp.status,
-          ResumableTransferDisposition.ABORT)
+          'Aborting' % resp.status, ResumableTransferDisposition.ABORT)
 
     # Else we got 200 or 201 response code, indicating the resumable
     # upload was created.
@@ -322,18 +323,20 @@ class BotoResumableUpload(object):
     put_headers = headers.copy() if headers else {}
     if file_length:
       if total_bytes_uploaded == file_length:
-        range_header = self._BuildContentRangeHeader(
-            '*', file_length)
+        range_header = self._BuildContentRangeHeader('*', file_length)
       else:
         range_header = self._BuildContentRangeHeader(
-            '%d-%d' % (total_bytes_uploaded, file_length - 1),
-            file_length)
+            '%d-%d' % (total_bytes_uploaded, file_length - 1), file_length)
       put_headers['Content-Range'] = range_header
     # Set Content-Length to the total bytes we'll send with this PUT.
     put_headers['Content-Length'] = str(file_length - total_bytes_uploaded)
     http_request = AWSAuthConnection.build_base_http_request(
-        conn, 'PUT', path=self.upload_url_path, auth_path=None,
-        headers=put_headers, host=self.upload_url_host)
+        conn,
+        'PUT',
+        path=self.upload_url_path,
+        auth_path=None,
+        headers=put_headers,
+        host=self.upload_url_host)
     http_conn.putrequest('PUT', http_request.path)
     for k in put_headers:
       http_conn.putheader(k, put_headers[k])
@@ -372,8 +375,7 @@ class BotoResumableUpload(object):
 
     if resp.status == 200:
       # Success.
-      return (resp.getheader('etag'),
-              resp.getheader('x-goog-generation'),
+      return (resp.getheader('etag'), resp.getheader('x-goog-generation'),
               resp.getheader('x-goog-metageneration'))
     # Retry timeout (408) and status 429, 500 and 503 errors after a delay.
     elif resp.status in [408, 429, 500, 503]:
@@ -381,12 +383,11 @@ class BotoResumableUpload(object):
     else:
       # Catch all for any other error codes.
       disposition = ResumableTransferDisposition.ABORT
-    raise ResumableUploadException('Got response code %d while attempting '
-                                   'upload (%s)' %
-                                   (resp.status, resp.reason), disposition)
+    raise ResumableUploadException(
+        'Got response code %d while attempting '
+        'upload (%s)' % (resp.status, resp.reason), disposition)
 
-  def _AttemptResumableUpload(self, key, fp, file_length, headers, cb,
-                              num_cb):
+  def _AttemptResumableUpload(self, key, fp, file_length, headers, cb, num_cb):
     """Attempts a resumable upload.
 
     Args:
@@ -410,8 +411,8 @@ class BotoResumableUpload(object):
     if self.upload_url:
       # Try to resume existing resumable upload.
       try:
-        (service_start, service_end) = (
-            self._QueryServicePos(conn, file_length))
+        (service_start,
+         service_end) = (self._QueryServicePos(conn, file_length))
         self.service_has_bytes = service_start
         if conn.debug >= 1:
           self.logger.debug('Resuming transfer.')
@@ -450,8 +451,7 @@ class BotoResumableUpload(object):
     # and can report that progress on next attempt.
     try:
       return self._UploadFileBytes(conn, http_conn, fp, file_length,
-                                   total_bytes_uploaded, cb, num_cb,
-                                   headers)
+                                   total_bytes_uploaded, cb, num_cb, headers)
     except (ResumableUploadException, socket.error):
       resp = self._QueryServiceState(conn, file_length)
       if resp.status == 400:
@@ -467,24 +467,28 @@ class BotoResumableUpload(object):
       http_conn.close()
 
   def HandleResumableUploadException(self, e, debug):
+    """Handle any exception thrown during upload and check for retry-ability."""
     if e.disposition == ResumableTransferDisposition.ABORT_CUR_PROCESS:
       if debug >= 1:
-        self.logger.debug('Caught non-retryable ResumableUploadException (%s); '
-                          'aborting but retaining tracker file', e.message)
+        self.logger.debug(
+            'Caught non-retryable ResumableUploadException (%s); '
+            'aborting but retaining tracker file', e.message)
       raise
     elif e.disposition == ResumableTransferDisposition.ABORT:
       if debug >= 1:
-        self.logger.debug('Caught non-retryable ResumableUploadException (%s); '
-                          'aborting and removing tracker file', e.message)
+        self.logger.debug(
+            'Caught non-retryable ResumableUploadException (%s); '
+            'aborting and removing tracker file', e.message)
       raise
     elif e.disposition == ResumableTransferDisposition.START_OVER:
       raise
     else:
       if debug >= 1:
-        self.logger.debug(
-            'Caught ResumableUploadException (%s) - will retry', e.message)
+        self.logger.debug('Caught ResumableUploadException (%s) - will retry',
+                          e.message)
 
-  def TrackProgressLessIterations(self, service_had_bytes_before_attempt,
+  def TrackProgressLessIterations(self,
+                                  service_had_bytes_before_attempt,
                                   debug=0):
     """Tracks the number of iterations without progress.
 
@@ -497,7 +501,7 @@ class BotoResumableUpload(object):
     """
     # At this point we had a re-tryable failure; see if made progress.
     if self.service_has_bytes > service_had_bytes_before_attempt:
-      self.progress_less_iterations = 0   # If progress, reset counter.
+      self.progress_less_iterations = 0  # If progress, reset counter.
     else:
       self.progress_less_iterations += 1
 
@@ -512,12 +516,19 @@ class BotoResumableUpload(object):
     sleep_time_secs = min(random.random() * (2**self.progress_less_iterations),
                           GetMaxRetryDelay())
     if debug >= 1:
-      self.logger.debug('Got retryable failure (%d progress-less in a row).\n'
-                        'Sleeping %3.1f seconds before re-trying',
-                        self.progress_less_iterations, sleep_time_secs)
+      self.logger.debug(
+          'Got retryable failure (%d progress-less in a row).\n'
+          'Sleeping %3.1f seconds before re-trying',
+          self.progress_less_iterations, sleep_time_secs)
     time.sleep(sleep_time_secs)
 
-  def SendFile(self, key, fp, size, headers, canned_acl=None, cb=None,
+  def SendFile(self,
+               key,
+               fp,
+               size,
+               headers,
+               canned_acl=None,
+               cb=None,
                num_cb=XML_PROGRESS_CALLBACKS):
     """Upload a file to a key into a bucket on GS, resumable upload protocol.
 
@@ -571,9 +582,9 @@ class BotoResumableUpload(object):
         # Save generation and metageneration in class state so caller
         # can find these values, for use in preconditions of future
         # operations on the uploaded object.
-        (_, self.generation, self.metageneration) = (
-            self._AttemptResumableUpload(key, fp, file_length,
-                                         headers, cb, num_cb))
+        (_, self.generation,
+         self.metageneration) = (self._AttemptResumableUpload(
+             key, fp, file_length, headers, cb, num_cb))
 
         key.generation = self.generation
         if debug >= 1:
@@ -592,5 +603,5 @@ class BotoResumableUpload(object):
       except ResumableUploadException as e:
         self.HandleResumableUploadException(e, debug)
 
-      self.TrackProgressLessIterations(service_had_bytes_before_attempt,
-                                       debug=debug)
+      self.TrackProgressLessIterations(
+          service_had_bytes_before_attempt, debug=debug)
